@@ -1,0 +1,18 @@
+{
+  "files": {
+    "config.json": [
+      {
+        "id": "3261df8d-de61-431e-976e-e3d3087e9253",
+        "line": 1,
+        "version": 16,
+        "index": 0
+      },
+      {
+        "id": "22e53c11-6e5e-41b4-a82d-1c0419219f63",
+        "line": 4,
+        "version": 16,
+        "index": 71
+      }
+    ]
+  }
+}
