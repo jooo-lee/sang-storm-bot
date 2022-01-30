@@ -1,6 +1,7 @@
 // Load necessary modules
 const Discord = require("discord.js");
 const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args));
+const keepAlive = require("./server");
 
 // Create a new client instance
 const client = new Discord.Client({
@@ -39,6 +40,8 @@ client.on("messageCreate", async (msg) => {
     msg.channel.send(quote);
   }
 });
+
+keepAlive();
 
 // Log in to Discord with client's token
 client.login(process.env['TOKEN']);
