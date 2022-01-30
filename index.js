@@ -1,5 +1,6 @@
-// Require the necessary discord.js classes
+// Load necessary modules
 const Discord = require("discord.js");
+const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args));
 
 // Create a new client instance
 const client = new Discord.Client({
@@ -9,15 +10,33 @@ const client = new Discord.Client({
   ]
 });
 
-// When the client is ready, run this code (only once)
+const zenQuotesAPIUrl = "https://zenquotes.io/api/today";
+
+// Fetch daily quote from https://zenquotes.io/
+async function getQuote() {
+  const response = await fetch(zenQuotesAPIUrl);
+  const data = await response.json();
+  return data[0]["q"] + " -" + data[0]["a"];
+}
+
+// When the client is ready, run this code
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-// Bot replies with "pong" when someone says "ping"
-client.on("messageCreate", (msg) => {
-  if (msg.content === "ping") {
-    msg.reply("pong");
+client.on("messageCreate", async (msg) => {
+  // Don't want bot to reply to itself
+  if (msg.author.bot) return;
+
+  // Just for fun hehe
+  if (msg.content === "hi") {
+    msg.reply("no.");
+  }
+
+  // Send quote of the day when someone types "$dailyquote"
+  if (msg.content === "$dailyquote") {
+    const quote = await getQuote();
+    msg.channel.send(quote);
   }
 });
 
