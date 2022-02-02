@@ -45,7 +45,7 @@ client.on("messageCreate", async (msg) => {
 keepAlive();
 
 // Log in to Discord with client's token
-client.login(process.env['TOKEN']);
+client.login(process.env["TOKEN"]);
 
 /* 
 Note to self:
@@ -56,16 +56,50 @@ cron.schedule("0 12 * * *", async function() { // convert UTC to EST, this is 7a
   client.channels.cache.get("936761148244627478").send("It is 7am. Have a nice day!");
   const quote = await getQuote();
   client.channels.cache.get("936761148244627478").send(quote);
+  const weather = await getWeather();
+  client.channels.cache.get("936761148244627478").send("Here is today's weather:");
+  client.channels.cache.get("936761148244627478").send("description: " + weather.description);
+  client.channels.cache.get("936761148244627478").send("tempMin :" + weather.tempMin);
+  client.channels.cache.get("936761148244627478").send("tempMax: " + weather.tempMax);
+  client.channels.cache.get("936761148244627478").send("humidity: " + weather.humidity);
+  client.channels.cache.get("936761148244627478").send("uv: " + weather.uv);
 });
+
+
+// weather stuff
+openWeatherAPIUrl = "https://api.openweathermap.org/data/2.5/onecall?lat=43.26097739706666&lon=-79.91909822038852&exclude=current,minutely,hourly&appid=" + process.env["openWeatherAPIKey"] + "&units=metric"; // lat&long is for McMaster
+
+async function getWeather() {
+  const response = await fetch(openWeatherAPIUrl);
+  const data = await response.json();
+
+  const weather = {
+    description: data["daily"][0]["weather"][0]["description"],
+    tempMin: data["daily"][0]["temp"]["min"],
+    tempMax: data["daily"][0]["temp"]["max"],
+    humidity: data["daily"][0]["humidity"],
+    uv: data["daily"][0]["uvi"]
+  };
+
+  return weather;
+}
+
 
 /* 
 TODO:
-- weather api
+- weather api => open weather api
+  - use: https://openweathermap.org/api/one-call-api
   - general weather
+    - use: https://openweathermap.org/weather-conditions#Weather-Condition-Codes-2
+    - account for alerts
   - temp
   - humidity
   - expected max UV index
+  - Mac lat, long:
+    - 43.26097739706666, -79.91909822038852
 - word of the day
+  - check a week later for API key
+  - https://www.wordnik.com/users/jooo-lee/API
 - song of the day
   - watch rest of FCC discord.js vid
   - can i make a queue? w replit db
