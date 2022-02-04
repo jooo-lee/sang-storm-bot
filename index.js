@@ -12,15 +12,6 @@ const client = new Discord.Client({
   ]
 });
 
-const zenQuotesAPIUrl = "https://zenquotes.io/api/today";
-
-// Fetch daily quote from https://zenquotes.io/
-async function getQuote() {
-  const response = await fetch(zenQuotesAPIUrl);
-  const data = await response.json();
-  return data[0]["q"] + " -" + data[0]["a"];
-}
-
 // When the client is ready, run this code
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -52,36 +43,61 @@ Note to self:
 Replit uses UTC timezone, so when dealing with time you need
 to convert it to whatever timezone you're currently in
 */
-cron.schedule("0 12 * * *", async function() { // convert UTC to EST, this is 7am EST 
+cron.schedule("59 2 * * *", async function() {
+// cron.schedule("0 12 * * *", async function() { // convert UTC to EST, this is 7am EST 
   client.channels.cache.get("936761148244627478").send("It is 7am. Have a nice day!");
   const quote = await getQuote();
   client.channels.cache.get("936761148244627478").send(quote);
-  const weather = await getWeather();
-  client.channels.cache.get("936761148244627478").send("Here is today's weather:");
-  client.channels.cache.get("936761148244627478").send("description: " + weather.description);
-  client.channels.cache.get("936761148244627478").send("tempMin :" + weather.tempMin);
-  client.channels.cache.get("936761148244627478").send("tempMax: " + weather.tempMax);
-  client.channels.cache.get("936761148244627478").send("humidity: " + weather.humidity);
-  client.channels.cache.get("936761148244627478").send("uv: " + weather.uv);
+  const dailyMsg = await getDailyMsg();
+  client.channels.cache.get("936761148244627478").send(dailyMsg);
+  // const weather = await getWeather();
+  // client.channels.cache.get("936761148244627478").send("Here is today's weather:");
+  // client.channels.cache.get("936761148244627478").send("description: " + weather.description);
+  // client.channels.cache.get("936761148244627478").send("tempMin :" + weather.tempMin);
+  // client.channels.cache.get("936761148244627478").send("tempMax: " + weather.tempMax);
+  // client.channels.cache.get("936761148244627478").send("humidity: " + weather.humidity);
+  // client.channels.cache.get("936761148244627478").send("uv: " + weather.uv);
 });
 
+async function getDailyMsg() {
+  const weather = await getWeather();
+  // add emojis, fix uv index emoji => https://stackoverflow.com/questions/3213/convert-integers-to-written-numbers
+  const dailyMsg = "Good morning everyone! Welcome back to another episode of **Sang Storm!** " +
+  ":robot: *beep boop* \nFor today's **weather**, we have: " +
+  weather.description + "!\n \n" + // add emoji here using weather condition code 
+  "The **temperature** will range from " + weather.tempMin + "°C to " + weather.tempMax + 
+  "°C :thermometer:\n" + "The **humidity** will reach a peak at " + weather.humidity + 
+  "% :droplet:\n" + "The **expected max UV index** for today will be: :" + weather.uv + ":\n" +
+  "Be sure to take the necessary precautions when going outside! :100:";
+  return dailyMsg;
+}
 
-// weather stuff
-openWeatherAPIUrl = "https://api.openweathermap.org/data/2.5/onecall?lat=43.26097739706666&lon=-79.91909822038852&exclude=current,minutely,hourly&appid=" + process.env["openWeatherAPIKey"] + "&units=metric"; // lat&long is for McMaster
 
+const openWeatherAPIUrl = "https://api.openweathermap.org/data/2.5/onecall?lat=43.26097739706666&lon=-79.91909822038852&exclude=current,minutely,hourly,alerts&appid=" + process.env["openWeatherAPIKey"] + "&units=metric"; // lat&long is for McMaster
+
+// Fetch daily weather from https://openweathermap.org/api
 async function getWeather() {
   const response = await fetch(openWeatherAPIUrl);
   const data = await response.json();
 
   const weather = {
     description: data["daily"][0]["weather"][0]["description"],
-    tempMin: data["daily"][0]["temp"]["min"],
-    tempMax: data["daily"][0]["temp"]["max"],
+    tempMin: Math.round(data["daily"][0]["temp"]["min"]),
+    tempMax: Math.round(data["daily"][0]["temp"]["max"]),
     humidity: data["daily"][0]["humidity"],
-    uv: data["daily"][0]["uvi"]
+    uv: Math.round(data["daily"][0]["uvi"])
   };
 
   return weather;
+}
+
+const zenQuotesAPIUrl = "https://zenquotes.io/api/today";
+
+// Fetch daily quote from https://zenquotes.io/
+async function getQuote() {
+  const response = await fetch(zenQuotesAPIUrl);
+  const data = await response.json();
+  return data[0]["q"] + " -" + data[0]["a"];
 }
 
 
@@ -91,7 +107,6 @@ TODO:
   - use: https://openweathermap.org/api/one-call-api
   - general weather
     - use: https://openweathermap.org/weather-conditions#Weather-Condition-Codes-2
-    - account for alerts
   - temp
   - humidity
   - expected max UV index
