@@ -43,7 +43,7 @@ Note to self:
 Replit uses UTC timezone, so when dealing with time you need
 to convert it to whatever timezone you're currently in
 */
-// cron.schedule("30 23 3 * * *", async function() { // for testing
+// cron.schedule("30 25 2 * * *", async function() { // for testing
 cron.schedule("0 12 * * *", async function() { // convert UTC to EST, this is 7am EST 
   // client.channels.cache.get("936761148244627478").send("It is 7am. Have a nice day!");
   // const quote = await getQuote();
@@ -63,7 +63,10 @@ async function getDailyMsg() {
   "°C :thermometer:\n" + "The **humidity** will reach a peak at " + weather.humidity + 
   "% :droplet:\n" + "The **expected max UV index** for today will be: " + weather.uvEmoji + "\n" +
   "Be sure to take the necessary precautions when going outside! :100:" + "\n \n" + 
-  "Your **daily fortune cookie** for today is ~ :fortune_cookie: \n" + "||" + quote + "||";
+  "Your **daily fortune cookie** for today is ~ :fortune_cookie: \n" + "||" + quote + "||" + "\n \n" +
+    "Your **word of the day** is ~ :abc: \n" +
+    "> **" + wordOfTheDay.word + "** \n" + 
+    "> (" + wordOfTheDay.partOfSpeech + ") " + wordOfTheDay.definition;
   return dailyMsg;
 }
 
@@ -138,10 +141,20 @@ async function getQuote() {
 
 const wordnikAPIUrl = "https://api.wordnik.com/v4/words.json/wordOfTheDay?api_key=" + process.env["wordnikAPIKey"];
 
+// Fetch daily word from wordnikAPI 
 async function getWordOfTheDay() {
   const response = await fetch(wordnikAPIUrl);
   const data = await response.json();
-  console.log(data["word"] + " (" + data["definitions"][0]["partOfSpeech"] + ") " + data["definitions"][0]["text"]);
+
+  const wordOfTheDay = {
+    word: data["word"],
+    partOfSpeech: data["definitions"][0]["partOfSpeech"],
+    definition: data["definitions"][0]["text"]
+  };
+
+  return wordOfTheDay;
+  
+  // console.log(data["word"] + " (" + data["definitions"][0]["partOfSpeech"] + ") " + data["definitions"][0]["text"]);
 }
 
 
