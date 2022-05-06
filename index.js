@@ -3,6 +3,7 @@ const Discord = require("discord.js");
 const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args));
 const keepAlive = require("./server");
 const cron = require("node-cron");
+const Database = require("@replit/database");
 
 // Create a new client instance
 const client = new Discord.Client({
@@ -11,6 +12,27 @@ const client = new Discord.Client({
     "GUILD_MESSAGES"
   ]
 });
+
+// Create a new database
+const db = new Database();
+
+// Store song of the day
+const dailySongs = [
+  "https://open.spotify.com/track/38umMmZQdeoOG7Zojor4g3?si=a0bb92cbfbcb4031", // ANGOSTURA - Keshi
+  "https://open.spotify.com/track/4jXl6VtkFFKIt3ycUQc5LT?si=f38e115959ab4dfc", // Circles - Mac Miller
+  "https://open.spotify.com/track/2SLwbpExuoBDZBpjfefCtV?si=9d1eb960e0c44c7c" // Out of time - The Weeknd
+];
+
+// Initialize daily songs in database
+(async () => {
+  let songs = await db.get("songs");
+  if (!songs || songs.length < 1) {
+    await db.set("songs", dailySongs);
+    console.log("init")
+    return;
+  }
+  console.log(songs);
+})();
 
 // When the client is ready, run this code
 client.on("ready", () => {
@@ -24,6 +46,11 @@ client.on("messageCreate", async (msg) => {
   // Just for fun hehe
   if (msg.content === "hi") {
     msg.reply(":fortune_cookie:");
+  }
+
+  // Send song of the day when someone types "$dailysong"
+  if (msg.content === "$dailysong") {
+    // const song = 
   }
 
   // Send quote of the day when someone types "$dailyquote"
@@ -45,9 +72,6 @@ to convert it to whatever timezone you're currently in
 */
 // cron.schedule("30 25 2 * * *", async function() { // for testing
 cron.schedule("0 12 * * *", async function() { // convert UTC to EST, this is 7am EST 
-  // client.channels.cache.get("936761148244627478").send("It is 7am. Have a nice day!");
-  // const quote = await getQuote();
-  // client.channels.cache.get("936761148244627478").send(quote);
   const dailyMsg = await getDailyMsg();
   client.channels.cache.get("936761148244627478").send(dailyMsg);
 });
@@ -153,25 +177,15 @@ async function getWordOfTheDay() {
   };
 
   return wordOfTheDay;
-  
-  // console.log(data["word"] + " (" + data["definitions"][0]["partOfSpeech"] + ") " + data["definitions"][0]["text"]);
 }
 
 
 /* 
 TODO:
-- weather api => open weather api
-  - use: https://openweathermap.org/api/one-call-api
-  - general weather
-    - use: https://openweathermap.org/weather-conditions#Weather-Condition-Codes-2
-  - temp
-  - humidity
-  - expected max UV index
-  - Mac lat, long:
-    - 43.26097739706666, -79.91909822038852
-- word of the day
-  - https://www.wordnik.com/users/jooo-lee/API
 - song of the day
-  - watch rest of FCC discord.js vid
-  - can i make a queue? w replit db
+  - can i make a queue? w replit db => just use array instead?
+  - https://stackoverflow.com/questions/34970608/check-if-string-is-spotify-url
+    - for checking spotify urls
+
+- minor issue: daylight savings time
 */
