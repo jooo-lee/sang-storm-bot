@@ -9,29 +9,42 @@ const Database = require("@replit/database");
 const client = new Discord.Client({
   intents: [
     "GUILDS",
-    "GUILD_MESSAGES"
+    "GUILD_MESSAGES",
+    "DIRECT_MESSAGES"
+  ],
+  partials: [
+    "CHANNEL" // Required to receive DMs
   ]
 });
 
 // Create a new database
 const db = new Database();
 
-// Store song of the day
-const dailySongs = [
+// Store song of the day, contains initial songs
+const initSongs = [
   "https://open.spotify.com/track/38umMmZQdeoOG7Zojor4g3?si=a0bb92cbfbcb4031", // ANGOSTURA - Keshi
   "https://open.spotify.com/track/4jXl6VtkFFKIt3ycUQc5LT?si=f38e115959ab4dfc", // Circles - Mac Miller
   "https://open.spotify.com/track/2SLwbpExuoBDZBpjfefCtV?si=9d1eb960e0c44c7c" // Out of time - The Weeknd
 ];
 
-// Initialize daily songs in database
+// Store song ID's, to be able to check if song is already queued
+// Links to the same spotify song are not unique
+const initSongIDs = [
+  "38umMmZQdeoOG7Zojor4g3", // ANGOSTURA - Keshi
+  "4jXl6VtkFFKIt3ycUQc5LT", // Circles - Mac Miller
+  "2SLwbpExuoBDZBpjfefCtV" // Out of time - The Weeknd
+];
+
+// Initialize daily songs and their ID's in database
 (async () => {
-  let songs = await db.get("songs");
-  if (!songs || songs.length < 1) {
-    await db.set("songs", dailySongs);
+  const dailySongs = await db.get("songs");
+  const dailySongIDs = await db.get("songIDs");
+  if (!dailySongs && !dailySongIDs) {
+    await db.set("songs", initSongs);
+    await db.set("songIDs", initSongIDs);
     console.log("init")
     return;
   }
-  console.log(songs);
 })();
 
 // When the client is ready, run this code
@@ -43,20 +56,62 @@ client.on("messageCreate", async (msg) => {
   // Don't want bot to reply to itself
   if (msg.author.bot) return;
 
-  // Just for fun hehe
-  if (msg.content === "hi") {
+  // Reply with fortune cookie emoji when someone types "hi"
+  if (msg.content === "hi" && msg.channel.type !== "DM") {
     msg.reply(":fortune_cookie:");
   }
 
   // Send song of the day when someone types "$dailysong"
-  if (msg.content === "$dailysong") {
-    // const song = 
+  if (msg.content === "$dailysong" && msg.channel.type !== "DM") {
+    const dailySongs = await db.get("songs");
+    if (dailySongs.length < 1) {
+      msg.channel.send("No daily song at the moment. DM me a spotify url to queue one!");
+      return;
+    }
+    msg.channel.send("The song of the day is: \n" + songs[0]);
   }
 
   // Send quote of the day when someone types "$dailyquote"
-  if (msg.content === "$dailyquote") {
+  if (msg.content === "$dailyquote" && msg.channel.type !== "DM") {
     const quote = await getQuote();
     msg.channel.send(quote);
+  }
+
+  // Receive dms from users
+  if (msg.channel.type === "DM") {
+    const dailySongs = await db.get("songs");
+    console.log("Current daily songs: \n" + dailySongs);
+
+    const dailySongIDs = await db.get("songIDs");
+    console.log(dailySongIDs);
+    
+    // regEx from HummingBird24 https://stackoverflow.com/questions/34970608/check-if-string-is-spotify-url
+    const regEx = /^(?:spotify:|(?:https?:\/\/(?:open|play)\.spotify\.com\/))(?:embed)?\/?(album|track)(?::|\/)((?:[0-9a-zA-Z]){22})/;
+    const match = msg.content.match(regEx);
+    if (match && match[1] == "track") {
+      if (!dailySongIDs.includes(match[2])) {
+        dailySongs.push(msg.content);
+        dailySongIDs.push(match[2]);
+        await db.set("songs", dailySongs);
+        await db.set("songIDs", dailySongIDs);
+        msg.reply("Song queued!");
+        console.log("Added new daily song: \n" + dailySongs);
+        console.log(dailySongIDs);
+        return;
+      }
+      msg.reply("Song already queued.");
+    }
+  }
+
+  // For testing, delete song
+  if (msg.content === "$del") {
+    const dailySongs = await db.get("songs");
+    dailySongs.pop();
+    await db.set("songs", dailySongs);
+    
+    const dailySongIDs = await db.get("songIDs");
+    dailySongIDs.pop();
+    await db.set("songIDs", dailySongIDs);
   }
 });
 
@@ -183,9 +238,9 @@ async function getWordOfTheDay() {
 /* 
 TODO:
 - song of the day
-  - can i make a queue? w replit db => just use array instead?
-  - https://stackoverflow.com/questions/34970608/check-if-string-is-spotify-url
-    - for checking spotify urls
+  - delete previous daily song from array, to output different daily song everyday
+  - instead of sang storm outputting daily song, just have it as a command
+  - may have to add array of spotify song ID's, since links to the same song are different
 
 - minor issue: daylight savings time
 */
