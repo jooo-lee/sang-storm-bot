@@ -20,15 +20,15 @@ const client = new Discord.Client({
 // Create a new database
 const db = new Database();
 
-// Store song of the day, contains initial songs
+// Contains initial songs of the day
 const initSongs = [
   "https://open.spotify.com/track/38umMmZQdeoOG7Zojor4g3?si=a0bb92cbfbcb4031", // ANGOSTURA - Keshi
   "https://open.spotify.com/track/4jXl6VtkFFKIt3ycUQc5LT?si=f38e115959ab4dfc", // Circles - Mac Miller
   "https://open.spotify.com/track/2SLwbpExuoBDZBpjfefCtV?si=9d1eb960e0c44c7c" // Out of time - The Weeknd
 ];
 
-// Store song ID's, to be able to check if song is already queued
-// Links to the same spotify song are not unique
+// Contains initial songs of the day IDs, to be able to check if song is already queued
+// Need this because links to the same spotify song are not always unique
 const initSongIDs = [
   "38umMmZQdeoOG7Zojor4g3", // ANGOSTURA - Keshi
   "4jXl6VtkFFKIt3ycUQc5LT", // Circles - Mac Miller
@@ -68,7 +68,7 @@ client.on("messageCreate", async (msg) => {
       msg.channel.send("No daily song at the moment. DM me a spotify url to queue one!");
       return;
     }
-    msg.channel.send("The song of the day is: \n" + songs[0]);
+    msg.channel.send("The song of the day is: \n" + dailySongs[0]);
   }
 
   // Send quote of the day when someone types "$dailyquote"
@@ -104,15 +104,25 @@ client.on("messageCreate", async (msg) => {
   }
 
   // For testing, delete song
-  if (msg.content === "$del") {
-    const dailySongs = await db.get("songs");
-    dailySongs.pop();
-    await db.set("songs", dailySongs);
+  // if (msg.content === "$del") {
+  //   const dailySongs = await db.get("songs");
+  //   dailySongs.pop();
+  //   await db.set("songs", dailySongs);
     
-    const dailySongIDs = await db.get("songIDs");
-    dailySongIDs.pop();
-    await db.set("songIDs", dailySongIDs);
-  }
+  //   const dailySongIDs = await db.get("songIDs");
+  //   dailySongIDs.pop();
+  //   await db.set("songIDs", dailySongIDs);
+  // }
+
+  // For testing also
+  // if (msg.content === "$delfront") {
+  //   const dailySongs = await db.get("songs");
+  //   const dailySongIDs = await db.get("songIDs");
+  //   dailySongs.shift();
+  //   dailySongIDs.shift();
+  //   await db.set("songIDs", dailySongIDs);
+  //   await db.set("songs", dailySongs);
+  // }
 });
 
 keepAlive();
@@ -125,10 +135,25 @@ Note to self:
 Replit uses UTC timezone, so when dealing with time you need
 to convert it to whatever timezone you're currently in
 */
-// cron.schedule("30 25 2 * * *", async function() { // for testing
 cron.schedule("0 12 * * *", async function() { // convert UTC to EST, this is 7am EST 
   const dailyMsg = await getDailyMsg();
   client.channels.cache.get("936761148244627478").send(dailyMsg);
+
+  const dailySongs = await db.get("songs");
+
+  // Don't run code to remove previous daily song if there are none left
+  if (dailySongs.length >= 1) {
+    // Remove previous day's daily song
+    dailySongs.shift();
+    console.log(dailySongs);
+    await db.set("songs", dailySongs);
+  
+    // Remove previous day's daily song ID
+    const dailySongIDs = await db.get("songIDs");
+    dailySongIDs.shift();
+    console.log(dailySongIDs);
+    await db.set("songIDs", dailySongIDs);
+  }
 });
 
 async function getDailyMsg() {
@@ -237,10 +262,5 @@ async function getWordOfTheDay() {
 
 /* 
 TODO:
-- song of the day
-  - delete previous daily song from array, to output different daily song everyday
-  - instead of sang storm outputting daily song, just have it as a command
-  - may have to add array of spotify song ID's, since links to the same song are different
-
 - minor issue: daylight savings time
 */
