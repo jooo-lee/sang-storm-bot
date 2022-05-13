@@ -71,12 +71,6 @@ client.on("messageCreate", async (msg) => {
     msg.channel.send("The song of the day is: \n" + dailySongs[0]);
   }
 
-  // Send quote of the day when someone types "$dailyquote"
-  if (msg.content === "$dailyquote" && msg.channel.type !== "DM") {
-    const quote = await getQuote();
-    msg.channel.send(quote);
-  }
-
   // Receive dms from users
   if (msg.channel.type === "DM") {
     const dailySongs = await db.get("songs");
@@ -102,27 +96,6 @@ client.on("messageCreate", async (msg) => {
       msg.reply("Song already queued.");
     }
   }
-
-  // For testing, delete song
-  // if (msg.content === "$del") {
-  //   const dailySongs = await db.get("songs");
-  //   dailySongs.pop();
-  //   await db.set("songs", dailySongs);
-    
-  //   const dailySongIDs = await db.get("songIDs");
-  //   dailySongIDs.pop();
-  //   await db.set("songIDs", dailySongIDs);
-  // }
-
-  // For testing also
-  // if (msg.content === "$delfront") {
-  //   const dailySongs = await db.get("songs");
-  //   const dailySongIDs = await db.get("songIDs");
-  //   dailySongs.shift();
-  //   dailySongIDs.shift();
-  //   await db.set("songIDs", dailySongIDs);
-  //   await db.set("songs", dailySongs);
-  // }
 });
 
 keepAlive();
